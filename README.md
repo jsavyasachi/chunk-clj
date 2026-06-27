@@ -28,13 +28,13 @@ budgets.
 Leiningen / Boot:
 
 ```clojure
-[net.clojars.savya/chunk-clj "0.1.0"]
+[net.clojars.savya/chunk-clj "0.1.1"]
 ```
 
 deps.edn:
 
 ```clojure
-net.clojars.savya/chunk-clj {:mvn/version "0.1.0"}
+net.clojars.savya/chunk-clj {:mvn/version "0.1.1"}
 ```
 
 ## Usage
