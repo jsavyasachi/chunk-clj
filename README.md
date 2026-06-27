@@ -1,5 +1,9 @@
 # chunk-clj
 
+[![Clojars Project](https://img.shields.io/clojars/v/net.clojars.savya/chunk-clj.svg)](https://clojars.org/net.clojars.savya/chunk-clj)
+[![cljdoc](https://cljdoc.org/badge/net.clojars.savya/chunk-clj)](https://cljdoc.org/d/net.clojars.savya/chunk-clj)
+[![test](https://github.com/jsavyasachi/chunk-clj/actions/workflows/test.yml/badge.svg)](https://github.com/jsavyasachi/chunk-clj/actions/workflows/test.yml)
+
 Recursive text splitting (chunking) for RAG and LLM pipelines - split text on natural
 boundaries into overlapping chunks sized by characters **or tokens**. Pure Clojure, zero
 dependencies.
@@ -7,9 +11,6 @@ dependencies.
 ## Stack
 
 <a href="https://clojure.org"><img src="https://img.shields.io/badge/Clojure-5881D8?style=flat&logo=clojure&logoColor=white" alt="Clojure" /></a>
-
-[![Clojars Project](https://img.shields.io/clojars/v/net.clojars.savya/chunk-clj.svg)](https://clojars.org/net.clojars.savya/chunk-clj)
-[![cljdoc](https://cljdoc.org/badge/net.clojars.savya/chunk-clj)](https://cljdoc.org/d/net.clojars.savya/chunk-clj)
 
 The standard way to prepare documents for retrieval is to split them into chunks that
 fit a model's context, on sensible boundaries, with a little overlap so a thought split
