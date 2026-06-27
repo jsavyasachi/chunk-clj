@@ -1,8 +1,8 @@
 (defproject net.clojars.savya/chunk-clj "0.1.0"
   :description "Recursive text splitting (chunking) for RAG and LLM pipelines: pluggable length (characters or tokens), configurable overlap, and ordered separators."
   :url "https://github.com/jsavyasachi/chunk-clj"
-  :license {:name "Eclipse Public License 1.0"
-            :url "https://www.eclipse.org/legal/epl-v10.html"}
+  :license {:name "Eclipse Public License 2.0"
+            :url "https://www.eclipse.org/legal/epl-2.0/"}
   :scm {:name "git" :url "https://github.com/jsavyasachi/chunk-clj"}
   :dependencies []
   :global-vars {*warn-on-reflection* true}
