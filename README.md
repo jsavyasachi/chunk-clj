@@ -5,8 +5,7 @@
 [![test](https://github.com/jsavyasachi/chunk-clj/actions/workflows/test.yml/badge.svg)](https://github.com/jsavyasachi/chunk-clj/actions/workflows/test.yml)
 
 Recursive text splitting (chunking) for RAG and LLM pipelines - split text on natural
-boundaries into overlapping chunks sized by characters **or tokens**. Pure Clojure, zero
-dependencies.
+boundaries into overlapping chunks sized by characters **or tokens**.
 
 ## Stack
 
