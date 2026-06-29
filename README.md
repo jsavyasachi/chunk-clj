@@ -19,8 +19,7 @@ across two chunks survives in both. `chunk-clj` is the Clojure equivalent of Lan
 to finest (character) until each chunk fits, then packs and overlaps them.
 
 The size limit is whatever you want it to be - `:length-fn` defaults to characters, but
-since models limit you by **tokens**, pass a token counter (e.g.
-[tokenizers-clj](https://github.com/jsavyasachi/tokenizers-clj)) and chunk by real token
+since models limit you by **tokens**, pass a token counter and chunk by real token
 budgets.
 
 ## Install
@@ -42,7 +41,7 @@ net.clojars.savya/chunk-clj {:mvn/version "0.1.1"}
 ```clojure
 (require '[chunk.core :as chunk])
 
-;; Character-sized chunks with overlap (the default):
+;; Character-sized chunks with overlap (default):
 (chunk/split long-text {:chunk-size 1000 :overlap 200})
 ;=> ["first ~1000-char chunk ..." "next chunk, sharing ~200 chars ..." ...]
 
@@ -54,7 +53,7 @@ net.clojars.savya/chunk-clj {:mvn/version "0.1.1"}
 (chunk/split doc {:chunk-size 800 :separators ["\n## " "\n\n" "\n" " " ""]})
 ```
 
-### Chunk by tokens (the right way)
+### Chunk by tokens
 
 Models cap input by tokens, not characters, so size chunks with a real tokenizer:
 
