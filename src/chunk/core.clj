@@ -13,6 +13,57 @@
   "Coarsest-to-finest split boundaries (the empty string splits into characters)."
   ["\n\n" "\n" " " ""])
 
+(def language-separators
+  "Language-aware split boundaries, coarsest first."
+  {:markdown (into ["\n# " "\n## " "\n### " "\n#### " "\n##### " "\n###### "
+                   "```\n"
+                   "\n\n***\n\n" "\n\n---\n\n" "\n\n___\n\n"]
+                  default-separators)
+   :python (into ["\nclass " "\ndef " "\n\tdef "] default-separators)
+   :clojure (into ["\n(defn " "\n(def " "\n(defmacro " "\n(defmulti "
+                   "\n(defmethod " "\n(defprotocol " "\n(defrecord "
+                   "\n(deftest " "\n(ns "]
+                  default-separators)
+   :javascript (into ["\nfunction " "\nconst " "\nlet " "\nvar " "\nclass "
+                      "\nif " "\nfor " "\nwhile " "\nswitch " "\ncase "
+                      "\ndefault "]
+                     default-separators)
+   :typescript (into ["\nfunction " "\nconst " "\nlet " "\nvar "
+                      "\ninterface " "\nenum " "\ntype " "\nnamespace "
+                      "\nclass " "\nif " "\nfor " "\nwhile " "\nswitch "
+                      "\ncase " "\ndefault "]
+                     default-separators)
+   :java (into ["\nclass " "\npublic " "\nprotected " "\nprivate " "\nstatic "
+                "\nif " "\nfor " "\nwhile " "\nswitch " "\ncase "]
+               default-separators)
+   :go (into ["\nfunc " "\nvar " "\nconst " "\ntype " "\nif " "\nfor "
+              "\nswitch " "\ncase "]
+             default-separators)
+   :rust (into ["\nfn " "\nconst " "\nlet " "\nif " "\nwhile " "\nfor "
+                "\nloop " "\nmatch "]
+               default-separators)
+   :html (into ["<body" "<div" "<p" "<br" "<li" "<h1" "<h2" "<h3" "<h4"
+                "<h5" "<h6" "<span" "<table" "<tr" "<td" "<th" "<ul" "<ol"
+                "<header" "<footer" "<nav" "<head" "<style" "<script"
+                "<meta" "<title"]
+               default-separators)
+   :latex (into ["\n\\chapter{" "\n\\section{" "\n\\subsection{"
+                 "\n\\subsubsection{" "\n\\begin{enumerate}"
+                 "\n\\begin{itemize}" "\n\\begin{description}"
+                 "\n\\begin{list}" "\n\\begin{quote}" "\n\\begin{quotation}"
+                 "\n\\begin{verse}" "\n\\begin{verbatim}" "\n\\begin{align}"]
+                default-separators)})
+
+(defn separators-for
+  "Return the separator vector for language keyword `lang`."
+  [lang]
+  (if-let [separators (get language-separators lang)]
+    separators
+    (throw (ex-info "Unknown language"
+                    {:chunk/error :unknown-language
+                     :language lang
+                     :known (set (keys language-separators))}))))
+
 (defn- split-on
   "Split s on literal separator sep, dropping empty pieces. `\"\"` splits into chars."
   [^String s ^String sep]
@@ -80,14 +131,26 @@
   - `:chunk-size` max size of a chunk, in `:length-fn` units (default 1000)
   - `:overlap`    size of trailing context repeated at the start of the next chunk (default 0)
   - `:separators` ordered split boundaries, coarsest first (default `default-separators`)
+  - `:language`   keyword selecting `language-separators`; conflicts with `:separators`
   - `:length-fn`  measures a string's size; default `count` (characters). Pass a token
                   counter to chunk by tokens.
 
   A piece with no admissible finer separator (an \"atom\" longer than `:chunk-size`) is
   emitted whole rather than dropped."
   ([text] (split text nil))
-  ([text {:keys [chunk-size overlap separators length-fn]
-          :or {chunk-size 1000 overlap 0 separators default-separators length-fn count}}]
-   (if (str/blank? (str text))
-     []
-     (recursive-split text (vec separators) chunk-size overlap length-fn))))
+  ([text opts]
+   (let [opts (or opts {})
+         {:keys [chunk-size overlap separators language length-fn]
+          :or {chunk-size 1000 overlap 0 length-fn count}} opts
+         separators (cond
+                      (and (contains? opts :language) (contains? opts :separators))
+                      (throw (ex-info "Conflicting options"
+                                      {:chunk/error :conflicting-options
+                                       :options #{:language :separators}}))
+
+                      (contains? opts :language) (separators-for language)
+                      (contains? opts :separators) separators
+                      :else default-separators)]
+     (if (str/blank? (str text))
+       []
+       (recursive-split text (vec separators) chunk-size overlap length-fn)))))

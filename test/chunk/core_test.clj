@@ -57,3 +57,75 @@
   (let [chunks (c/split "supercalifragilistic" {:chunk-size 5 :overlap 0
                                                 :separators ["\n\n" "\n" " "]})]
     (is (= ["supercalifragilistic"] chunks))))
+
+(deftest markdown-language-splits-on-heading-boundaries
+  (let [text (str "Intro paragraph with enough text to stand alone.\n"
+                  "## First section\n"
+                  "Some markdown body text.\n"
+                  "```clojure\n"
+                  "(defn example [] :ok)\n"
+                  "```\n"
+                  "### Nested section\n"
+                  "More markdown body text.\n"
+                  "## Second section\n"
+                  "Final markdown body text.")
+        chunks (c/split text {:chunk-size 90 :overlap 0 :language :markdown})]
+    (is (> (count chunks) 1))
+    (is (some #(str/includes? % "First section") chunks))
+    (is (some #(str/includes? % "Nested section") chunks))
+    (is (some #(str/includes? % "Second section") chunks))
+    (is (not-any? #(str/starts-with? % "## ") chunks))
+    (is (not-any? #(str/starts-with? % "### ") chunks))))
+
+(deftest python-language-splits-on-def-boundaries
+  (let [text (str "def first():\n"
+                  "    return 'alpha alpha alpha alpha alpha'\n"
+                  "\n"
+                  "def second():\n"
+                  "    return 'beta beta beta beta beta'")
+        chunks (c/split text {:chunk-size 70 :overlap 0 :language :python})]
+    (is (= 2 (count chunks)))
+    (is (str/includes? (first chunks) "def first():"))
+    (is (str/includes? (second chunks) "second():"))))
+
+(deftest clojure-language-splits-on-defn-boundaries
+  (let [text (str "(defn first-fn []\n"
+                  "  :alpha-alpha-alpha-alpha-alpha)\n"
+                  "\n"
+                  "(defn second-fn []\n"
+                  "  :beta-beta-beta-beta-beta)")
+        chunks (c/split text {:chunk-size 70 :overlap 0 :language :clojure})]
+    (is (= 2 (count chunks)))
+    (is (str/includes? (first chunks) "(defn first-fn"))
+    (is (str/includes? (second chunks) "second-fn"))))
+
+(deftest unknown-language-throws
+  (try
+    (c/separators-for :nope)
+    (is false "Expected unknown language")
+    (catch clojure.lang.ExceptionInfo e
+      (is (= :unknown-language (:chunk/error (ex-data e))))
+      (is (= :nope (:language (ex-data e))))
+      (is (contains? (:known (ex-data e)) :python)))))
+
+(deftest language-and-separators-conflict
+  (try
+    (c/split "hello world" {:chunk-size 5
+                            :language :python
+                            :separators [" "]})
+    (is false "Expected conflicting options")
+    (catch clojure.lang.ExceptionInfo e
+      (is (= :conflicting-options (:chunk/error (ex-data e)))))))
+
+(deftest language-separators-have-default-tail-and-literal-strings
+  (doseq [[language separators] c/language-separators]
+    (testing language
+      (is (vector? separators))
+      (is (= ["\n\n" "\n" " " ""] (subvec separators (- (count separators) 4))))
+      (is (every? string? separators)))))
+
+(deftest default-behavior-matches-explicit-default-separators
+  (let [text "Alpha beta.\n\nGamma delta.\n\nEpsilon zeta."]
+    (is (= (c/split text {:chunk-size 15 :overlap 0})
+           (c/split text {:chunk-size 15 :overlap 0
+                          :separators c/default-separators})))))
