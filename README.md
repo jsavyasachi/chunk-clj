@@ -26,13 +26,13 @@ budgets.
 Leiningen / Boot:
 
 ```clojure
-[net.clojars.savya/chunk-clj "0.1.1"]
+[net.clojars.savya/chunk-clj "0.2.0"]
 ```
 
 deps.edn:
 
 ```clojure
-net.clojars.savya/chunk-clj {:mvn/version "0.1.1"}
+net.clojars.savya/chunk-clj {:mvn/version "0.2.0"}
 ```
 
 ## Usage
@@ -50,7 +50,29 @@ net.clojars.savya/chunk-clj {:mvn/version "0.1.1"}
 
 ;; Custom separators (e.g. split markdown on headings first):
 (chunk/split doc {:chunk-size 800 :separators ["\n## " "\n\n" "\n" " " ""]})
+
+;; Or use a built-in language preset:
+(chunk/split doc {:chunk-size 800 :language :markdown})
 ```
+
+### Language presets
+
+`:language` selects a separator preset from `chunk.core/language-separators` so
+chunks land on structural boundaries (headings, function definitions, tags)
+before falling back to paragraphs, lines, words, and characters. Available:
+`:markdown`, `:python`, `:clojure`, `:javascript`, `:typescript`, `:java`,
+`:go`, `:rust`, `:html`, `:latex`.
+
+```clojure
+(chunk/split source {:chunk-size 512 :language :clojure})
+
+(chunk/separators-for :python)
+;=> ["\nclass " "\ndef " "\n\tdef " "\n\n" "\n" " " ""]
+```
+
+All presets are literal strings (no regexes) ending in the default
+paragraph/line/word/character tail. Passing both `:language` and `:separators`
+throws; an unknown language keyword throws with the known set in `ex-data`.
 
 ### Chunk by tokens
 

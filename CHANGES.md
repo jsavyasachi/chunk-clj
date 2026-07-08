@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] - 2026-07-07
+
+### Added
+- `chunk.core/language-separators` - separator presets for `:markdown`,
+  `:python`, `:clojure`, `:javascript`, `:typescript`, `:java`, `:go`, `:rust`,
+  `:html`, and `:latex`, so chunks land on structural boundaries (headings,
+  function definitions, tags) before the paragraph/line/word/character tail.
+- `chunk.core/separators-for` - preset lookup; unknown language throws with the
+  known set in `ex-data`.
+- `:language` option on `split` - sugar for `:separators (separators-for lang)`;
+  passing both `:language` and `:separators` throws.
+
+## [0.1.1] - 2026-06-29
+
+License metadata release (EPL 2.0 in the POM); no code changes.
+
 ## [0.1.0] - 2026-06-23
 
 Initial release.
