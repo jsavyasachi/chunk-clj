@@ -10,6 +10,8 @@ boundaries into overlapping chunks sized by characters **or tokens**.
 ## Stack
 
 <a href="https://clojure.org"><img src="https://img.shields.io/badge/Clojure-5881D8?style=flat&logo=clojure&logoColor=white" alt="Clojure" /></a>
+<a href="https://clojure.org/guides/deps_and_cli"><img src="https://img.shields.io/badge/deps.edn-5881D8?style=flat&logo=clojure&logoColor=fff" alt="deps.edn" /></a>
+<a href="https://clojure.github.io/tools.build/"><img src="https://img.shields.io/badge/tools.build-5881D8?style=flat&logo=clojure&logoColor=fff" alt="tools.build" /></a>
 
 The standard way to prepare documents for retrieval is to split them into chunks that
 fit a model's context, on sensible boundaries, with a little overlap so a thought split
@@ -23,16 +25,24 @@ budgets.
 
 ## Install
 
-Leiningen / Boot:
+tools.deps (`deps.edn`):
+
+```clojure
+net.clojars.savya/chunk-clj {:mvn/version "0.2.0"}
+```
+
+Leiningen (`project.clj`):
 
 ```clojure
 [net.clojars.savya/chunk-clj "0.2.0"]
 ```
 
-deps.edn:
+## Development
 
-```clojure
-net.clojars.savya/chunk-clj {:mvn/version "0.2.0"}
+```shell
+clojure -M:test
+clojure -T:build jar
+clojure -T:build deploy
 ```
 
 ## Usage
