@@ -76,37 +76,39 @@
   (let [d (str/join sep pieces)]
     (when-not (str/blank? d) (str/trim d))))
 
+(defn- joined-length [pieces sep length-fn]
+  (long (length-fn (str/join sep pieces))))
+
 (defn- trim-overlap
   "Pop pieces off the front of the current buffer until it is within the overlap
   budget (and small enough to admit the next piece)."
-  [cur cur-len sep-len next-len chunk-size overlap length-fn]
-  (loop [cur cur, cur-len (long cur-len)]
+  [cur next-piece sep chunk-size overlap length-fn]
+  (loop [cur cur, cur-len (joined-length cur sep length-fn)]
     (if (and (seq cur)
              (or (> cur-len (long overlap))
-                 (> (+ cur-len (long next-len)) (long chunk-size))))
-      (let [removed (long (+ (long (length-fn (first cur)))
-                             (if (> (count cur) 1) (long sep-len) 0)))]
-        (recur (subvec cur 1) (- cur-len removed)))
-      [cur cur-len])))
+                 (> (joined-length (conj cur next-piece) sep length-fn)
+                    (long chunk-size))))
+      (let [cur (subvec cur 1)]
+        (recur cur (joined-length cur sep length-fn)))
+      cur)))
 
 (defn- merge-splits
   "Greedily pack pieces (each already <= chunk-size) into chunks of <= chunk-size,
   joined by sep, carrying `overlap` worth of trailing pieces into the next chunk."
   [pieces sep chunk-size overlap length-fn]
-  (let [sep-len (long (length-fn sep))]
-    (loop [pieces (seq pieces), cur [], cur-len 0, out []]
-      (if-let [d (first pieces)]
-        (let [next-len (long (+ (long (length-fn d)) (if (seq cur) sep-len 0)))]
-          (if (and (seq cur) (> (+ (long cur-len) next-len) (long chunk-size)))
-            (let [doc (join-trim cur sep)
-                  out (cond-> out doc (conj doc))
-                  [cur cur-len] (trim-overlap cur cur-len sep-len next-len
-                                              chunk-size overlap length-fn)]
-              (recur pieces cur (long cur-len) out))     ; retry same d on trimmed buffer
-            (recur (next pieces) (conj cur d) (+ cur-len next-len) out)))
-        (if-let [doc (join-trim cur sep)]
-          (conj out doc)
-          out)))))
+  (loop [pieces (seq pieces), cur [], out []]
+    (if-let [d (first pieces)]
+      (let [candidate (conj cur d)
+            candidate-len (joined-length candidate sep length-fn)]
+        (if (and (seq cur) (> candidate-len (long chunk-size)))
+          (let [doc (join-trim cur sep)
+                out (cond-> out doc (conj doc))
+                cur (trim-overlap cur d sep chunk-size overlap length-fn)]
+            (recur pieces cur out))                      ; retry same d on trimmed buffer
+          (recur (next pieces) candidate out)))
+      (if-let [doc (join-trim cur sep)]
+        (conj out doc)
+        out))))
 
 (defn- recursive-split [text separators chunk-size overlap length-fn]
   (let [sep (or (some #(when (and (not= "" %) (str/includes? text %)) %) separators)

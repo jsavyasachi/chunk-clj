@@ -52,6 +52,14 @@
     (is (every? #(<= (wc %) 3) chunks))
     (is (= "one two three" (first chunks)))))
 
+(deftest measures-joined-candidates-with-length-fn
+  (let [token-count #(get {"a" 1 "b" 1 "c" 1 " " 0 "a b" 3} % (count %))
+        chunks (c/split "a b c" {:chunk-size 2
+                                  :overlap 0
+                                  :separators [" "]
+                                  :length-fn token-count})]
+    (is (every? #(<= (token-count %) 2) chunks))))
+
 (deftest oversized-atom-emitted-whole
   ;; no separator can break it below the size -> kept as-is rather than dropped
   (let [chunks (c/split "supercalifragilistic" {:chunk-size 5 :overlap 0
