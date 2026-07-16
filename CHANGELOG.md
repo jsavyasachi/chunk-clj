@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.2] - 2026-07-16
+
+### Fixed
+- Measure fully-joined chunk candidates with `:length-fn` so token-budget mode no longer exceeds the budget on non-additive (BPE) tokenizers.
+
 ## [0.2.1] - 2026-07-12
 
 ### Changed
