@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- `:keep-separator` option with `:start`, `:end`, and `false` modes.
+- `chunk.core/split-with-offsets` for source character offsets.
+
+### Changed
+- Separators are now kept by default, fixing separator loss in language presets compared
+  with 0.2.2.
+- Redundant `:length-fn` calls for already-measured joined candidates are cached per split.
+
 ## [0.2.2] - 2026-07-16
 
 ### Fixed

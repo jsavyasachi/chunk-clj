@@ -63,7 +63,16 @@ clojure -T:build deploy
 
 ;; Or use a built-in language preset:
 (chunk/split doc {:chunk-size 800 :language :markdown})
+
+;; Keep source locations for indexing or highlighting:
+(chunk/split-with-offsets doc {:chunk-size 800 :language :markdown})
+;=> [{:text "...", :start 0, :end 42} ...]
 ```
+
+Separators are kept by default with `:keep-separator :start`, attached to the piece
+that follows them. This preserves language and markdown content such as `def ` and
+`## `. Use `:keep-separator :end` to attach them to the preceding piece, or
+`:keep-separator false` for the separator-dropping behavior from 0.2.2.
 
 ### Language presets
 
@@ -108,10 +117,17 @@ model's exact token limit.
 | `:chunk-size` | `1000` | Max chunk size, in `:length-fn` units |
 | `:overlap` | `0` | Trailing context repeated at the start of the next chunk |
 | `:separators` | `["\n\n" "\n" " " ""]` | Ordered split boundaries, coarsest first |
+| `:keep-separator` | `:start` | Keep separators on the following piece (`:end` attaches them to the preceding piece; `false` drops them) |
+| `:language` | - | Select a built-in language separator preset |
 | `:length-fn` | `count` | Measures a string's size (swap in a token counter) |
 
 An "atom" longer than `:chunk-size` with no admissible finer separator (e.g. one huge
 word when `""` is not in `:separators`) is emitted whole rather than dropped.
+
+`split-with-offsets` has the same options and returns `{:text s :start i :end j}` maps,
+where offsets index the original input. With `:keep-separator false`, chunks that are
+not exact source substrings have nil offsets. Token-mode measurements are cached per
+split call, avoiding repeated tokenization of already-measured joined candidates.
 
 ## License
 

@@ -82,8 +82,9 @@
     (is (some #(str/includes? % "First section") chunks))
     (is (some #(str/includes? % "Nested section") chunks))
     (is (some #(str/includes? % "Second section") chunks))
-    (is (not-any? #(str/starts-with? % "## ") chunks))
-    (is (not-any? #(str/starts-with? % "### ") chunks))))
+    (is (some #(str/starts-with? % "## First section") chunks))
+    (is (some #(str/starts-with? % "### Nested section") chunks))
+    (is (some #(str/starts-with? % "## Second section") chunks))))
 
 (deftest python-language-splits-on-def-boundaries
   (let [text (str "def first():\n"
@@ -94,7 +95,7 @@
         chunks (c/split text {:chunk-size 70 :overlap 0 :language :python})]
     (is (= 2 (count chunks)))
     (is (str/includes? (first chunks) "def first():"))
-    (is (str/includes? (second chunks) "second():"))))
+    (is (str/starts-with? (second chunks) "def second():"))))
 
 (deftest clojure-language-splits-on-defn-boundaries
   (let [text (str "(defn first-fn []\n"
@@ -105,7 +106,7 @@
         chunks (c/split text {:chunk-size 70 :overlap 0 :language :clojure})]
     (is (= 2 (count chunks)))
     (is (str/includes? (first chunks) "(defn first-fn"))
-    (is (str/includes? (second chunks) "second-fn"))))
+    (is (str/starts-with? (second chunks) "(defn second-fn"))))
 
 (deftest unknown-language-throws
   (try
@@ -137,3 +138,37 @@
     (is (= (c/split text {:chunk-size 15 :overlap 0})
            (c/split text {:chunk-size 15 :overlap 0
                           :separators c/default-separators})))))
+
+(deftest keep-separator-modes
+  (let [text "alpha::beta::gamma"
+        opts {:chunk-size 10 :overlap 0 :separators ["::" ""]}]
+    (is (= ["alpha" "::beta" "::gamma"]
+           (c/split text opts)))
+    (is (= ["alpha::" "beta::" "gamma"]
+           (c/split text (assoc opts :keep-separator :end))))
+    (is (= ["alpha" "beta" "gamma"]
+           (c/split text (assoc opts :keep-separator false))))))
+
+(deftest split-with-offsets-preserves-source-substrings
+  (let [source "alpha beta gamma delta epsilon zeta"
+        chunks (c/split-with-offsets source {:chunk-size 12 :overlap 3})]
+    (is (> (count chunks) 1))
+    (is (every? (fn [{:keys [text start end]}]
+                  (= text (subs source start end)))
+                chunks))))
+
+(deftest split-with-offsets-supports-language-presets
+  (let [text "def first():\n    return 1\n\ndef second():\n    return 2"
+        chunks (c/split-with-offsets text {:chunk-size 30 :overlap 5 :language :python})]
+    (is (every? #(= (:text %) (subs text (:start %) (:end %))) chunks))
+    (is (some #(str/starts-with? (:text %) "def second():") chunks))))
+
+(deftest caches-length-fn-measurements-within-a-split
+  (let [calls (atom 0)
+        length-fn (fn [s] (swap! calls inc) (count s))
+        text "one two three four five six seven eight nine ten eleven twelve"
+        chunks (c/split text {:chunk-size 15 :overlap 5 :length-fn length-fn})]
+    ;; The uncached implementation made 52 calls for this input; caching is 29.
+    (is (= ["one two three" "four five six" "six seven" "eight nine ten"
+            "ten eleven" "twelve"] chunks))
+    (is (< @calls 35))))
