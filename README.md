@@ -28,13 +28,13 @@ budgets.
 tools.deps (`deps.edn`):
 
 ```clojure
-net.clojars.savya/chunk-clj {:mvn/version "0.2.0"}
+net.clojars.savya/chunk-clj {:mvn/version "0.2.2"}
 ```
 
 Leiningen (`project.clj`):
 
 ```clojure
-[net.clojars.savya/chunk-clj "0.2.0"]
+[net.clojars.savya/chunk-clj "0.2.2"]
 ```
 
 ## Development
