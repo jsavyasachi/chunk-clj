@@ -4,8 +4,8 @@
 [![cljdoc](https://cljdoc.org/badge/net.clojars.savya/chunk-clj)](https://cljdoc.org/d/net.clojars.savya/chunk-clj)
 [![test](https://github.com/jsavyasachi/chunk-clj/actions/workflows/test.yml/badge.svg)](https://github.com/jsavyasachi/chunk-clj/actions/workflows/test.yml)
 
-Recursive text splitting (chunking) for RAG and LLM pipelines - split text on natural
-boundaries into overlapping chunks sized by characters **or tokens**.
+This library splits text recursively into chunks for RAG and LLM pipelines. It splits
+text on natural boundaries into overlapping chunks by characters **or tokens**.
 
 ## Stack
 
@@ -13,15 +13,15 @@ boundaries into overlapping chunks sized by characters **or tokens**.
 <a href="https://clojure.org/guides/deps_and_cli"><img src="https://img.shields.io/badge/deps.edn-5881D8?style=flat&logo=clojure&logoColor=fff" alt="deps.edn" /></a>
 <a href="https://clojure.github.io/tools.build/"><img src="https://img.shields.io/badge/tools.build-5881D8?style=flat&logo=clojure&logoColor=fff" alt="tools.build" /></a>
 
-The standard way to prepare documents for retrieval is to split them into chunks that
-fit a model's context, on sensible boundaries, with a little overlap so a thought split
-across two chunks survives in both. `chunk-clj` is the Clojure equivalent of LangChain's
-`RecursiveCharacterTextSplitter`: it tries a list of separators from coarsest (paragraph)
-to finest (character) until each chunk fits, then packs and overlaps them.
+To prepare documents for retrieval, split them into chunks that fit a model's context.
+Split on suitable boundaries and use a small overlap. With overlap, text that crosses
+a chunk boundary stays in both chunks. `chunk-clj` is the Clojure equivalent of
+LangChain's `RecursiveCharacterTextSplitter`. It tries a list of separators, from
+coarsest (paragraph) to finest (character), until each chunk fits. Then it packs the
+chunks and adds the overlap.
 
-The size limit is whatever you want it to be - `:length-fn` defaults to characters, but
-since models limit you by **tokens**, pass a token counter and chunk by real token
-budgets.
+You set the size limit. `:length-fn` defaults to characters. Models limit you by
+**tokens**, so pass a token counter and chunk by a real token budget.
 
 ## Install
 
@@ -69,18 +69,18 @@ clojure -T:build deploy
 ;=> [{:text "...", :start 0, :end 42} ...]
 ```
 
-Separators are kept by default with `:keep-separator :start`, attached to the piece
-that follows them. This preserves language and markdown content such as `def ` and
-`## `. Use `:keep-separator :end` to attach them to the preceding piece, or
+By default, `:keep-separator :start` keeps each separator and attaches it to the piece
+that follows it. This keeps language and markdown content such as `def ` and `## `.
+Use `:keep-separator :end` to attach a separator to the piece before it. Use
 `:keep-separator false` for the separator-dropping behavior from 0.2.2.
 
 ### Language presets
 
-`:language` selects a separator preset from `chunk.core/language-separators` so
-chunks land on structural boundaries (headings, function definitions, tags)
-before falling back to paragraphs, lines, words, and characters. Available:
-`:markdown`, `:python`, `:clojure`, `:javascript`, `:typescript`, `:java`,
-`:go`, `:rust`, `:html`, `:latex`.
+`:language` selects a separator preset from `chunk.core/language-separators`.
+Chunks then land on structural boundaries: headings, function definitions, and
+tags. The preset then falls back to paragraphs, lines, words, and characters.
+The presets are `:markdown`, `:python`, `:clojure`, `:javascript`,
+`:typescript`, `:java`, `:go`, `:rust`, `:html`, and `:latex`.
 
 ```clojure
 (chunk/split source {:chunk-size 512 :language :clojure})
@@ -89,13 +89,14 @@ before falling back to paragraphs, lines, words, and characters. Available:
 ;=> ["\nclass " "\ndef " "\n\tdef " "\n\n" "\n" " " ""]
 ```
 
-All presets are literal strings (no regexes) ending in the default
-paragraph/line/word/character tail. Passing both `:language` and `:separators`
-throws; an unknown language keyword throws with the known set in `ex-data`.
+All presets are literal strings, not regexes. Each preset ends with the default
+paragraph, line, word, and character tail. If you pass both `:language` and
+`:separators`, the function throws. An unknown language keyword also throws,
+with the known set in `ex-data`.
 
 ### Chunk by tokens
 
-Models cap input by tokens, not characters, so size chunks with a real tokenizer:
+Models limit input by tokens, not characters. Use a real tokenizer to size the chunks:
 
 ```clojure
 (require '[chunk.core :as chunk]
@@ -107,27 +108,29 @@ Models cap input by tokens, not characters, so size chunks with a real tokenizer
                           :length-fn  #(tok/count-tokens t %)}))
 ```
 
-Any `String -> number` function works as `:length-fn`, so you can target an embedding
+Any `String -> number` function works as `:length-fn`. You can target an embedding
 model's exact token limit.
 
 ## Options
 
 | Key | Default | Meaning |
 |-----|---------|---------|
-| `:chunk-size` | `1000` | Max chunk size, in `:length-fn` units |
+| `:chunk-size` | `1000` | Maximum chunk size, in `:length-fn` units |
 | `:overlap` | `0` | Trailing context repeated at the start of the next chunk |
 | `:separators` | `["\n\n" "\n" " " ""]` | Ordered split boundaries, coarsest first |
 | `:keep-separator` | `:start` | Keep separators on the following piece (`:end` attaches them to the preceding piece; `false` drops them) |
 | `:language` | - | Select a built-in language separator preset |
-| `:length-fn` | `count` | Measures a string's size (swap in a token counter) |
+| `:length-fn` | `count` | Measures a string's size (use a token counter) |
 
-An "atom" longer than `:chunk-size` with no admissible finer separator (e.g. one huge
-word when `""` is not in `:separators`) is emitted whole rather than dropped.
+If an "atom" is longer than `:chunk-size` and has no finer separator available, the
+splitter emits it whole. It does not drop it. An example is one very long word when
+`""` is not in `:separators`.
 
-`split-with-offsets` has the same options and returns `{:text s :start i :end j}` maps,
-where offsets index the original input. With `:keep-separator false`, chunks that are
-not exact source substrings have nil offsets. Token-mode measurements are cached per
-split call, avoiding repeated tokenization of already-measured joined candidates.
+`split-with-offsets` has the same options. It returns `{:text s :start i :end j}` maps,
+where the offsets index the original input. With `:keep-separator false`, a chunk that
+is not an exact source substring has nil offsets. The splitter caches token-mode
+measurements for each split call. It does not tokenize a joined candidate again after
+it measures the candidate.
 
 ## License
 

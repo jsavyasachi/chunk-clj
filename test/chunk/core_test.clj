@@ -16,18 +16,18 @@
         chunks (c/split text {:chunk-size 50 :overlap 0})]
     (is (> (count chunks) 1))
     (is (every? #(<= (count %) 50) chunks))
-    (testing "no content lost (whitespace-insensitive)"
+    (testing "keeps content without whitespace"
       (is (= (str/replace text #"\s" "")
              (str/replace (apply str chunks) #"\s" ""))))))
 
 (deftest prefers-coarsest-boundary
-  ;; each paragraph fits under the size, so it splits on \n\n and stops there
+  ;; Each paragraph fits within the size. The splitter uses \n\n and stops.
   (let [text "Alpha beta.\n\nGamma delta.\n\nEpsilon zeta."
         chunks (c/split text {:chunk-size 15 :overlap 0})]
     (is (= ["Alpha beta." "Gamma delta." "Epsilon zeta."] chunks))))
 
 (deftest recurses-to-finer-separators
-  ;; one long line, no paragraph breaks -> must drop to spaces
+  ;; One long line has no paragraph breaks. The splitter must use spaces.
   (let [text (str/join " " (map #(str "w" %) (range 40)))
         chunks (c/split text {:chunk-size 25 :overlap 0})]
     (is (> (count chunks) 1))
@@ -37,7 +37,7 @@
   (let [text (str/join " " (map str (range 30)))
         chunks (c/split text {:chunk-size 20 :overlap 10})]
     (is (> (count chunks) 1))
-    (testing "adjacent chunks share boundary words"
+    (testing "adjacent chunks have shared boundary words"
       (is (every? (fn [[a b]]
                     (let [tail (set (take-last 3 (str/split a #"\s+")))
                           head (take 3 (str/split b #"\s+"))]
@@ -45,7 +45,7 @@
                   (partition 2 1 chunks))))))
 
 (deftest pluggable-length-fn-counts-tokens-not-chars
-  ;; measure size in whitespace tokens (stand-in for a real tokenizer)
+  ;; Measure the size in whitespace tokens. This is a substitute for a real tokenizer.
   (let [wc (fn [s] (if (str/blank? s) 0 (count (str/split (str/trim s) #"\s+"))))
         text "one two three four five six seven eight nine ten"
         chunks (c/split text {:chunk-size 3 :overlap 0 :length-fn wc})]
@@ -61,7 +61,7 @@
     (is (every? #(<= (token-count %) 2) chunks))))
 
 (deftest oversized-atom-emitted-whole
-  ;; no separator can break it below the size -> kept as-is rather than dropped
+  ;; No separator can split it below the size. The splitter keeps it whole.
   (let [chunks (c/split "supercalifragilistic" {:chunk-size 5 :overlap 0
                                                 :separators ["\n\n" "\n" " "]})]
     (is (= ["supercalifragilistic"] chunks))))
@@ -168,7 +168,7 @@
         length-fn (fn [s] (swap! calls inc) (count s))
         text "one two three four five six seven eight nine ten eleven twelve"
         chunks (c/split text {:chunk-size 15 :overlap 5 :length-fn length-fn})]
-    ;; The uncached implementation made 52 calls for this input; caching is 29.
+    ;; The implementation without a cache makes 52 calls for this input. With the cache, it makes 29.
     (is (= ["one two three" "four five six" "six seven" "eight nine ten"
             "ten eleven" "twelve"] chunks))
     (is (< @calls 35))))

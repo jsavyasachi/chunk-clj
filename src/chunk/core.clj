@@ -1,20 +1,21 @@
 (ns chunk.core
-  "Recursive text splitting (chunking) for RAG / LLM pipelines.
+  "This namespace splits text recursively into chunks for RAG and LLM pipelines.
 
-  `split` breaks text into overlapping chunks no larger than a target size, trying an
-  ordered list of separators from coarsest (paragraph) to finest (character) so chunks
-  land on natural boundaries. Size is measured by `:length-fn` (default `count` =
-  characters); pass a token counter (e.g. tokenizers-clj's `count-tokens`) to chunk by
-  tokens instead - the correct unit when feeding a model with a token limit."
+  `split` breaks text into overlapping chunks. No chunk is larger than a target size.
+  `split` tries an ordered list of separators, from coarsest (paragraph) to finest
+  (character), so chunks use natural boundaries. `:length-fn` measures the size. Its
+  default is `count`, which measures characters. Pass a token counter, for example
+  tokenizers-clj's `count-tokens`, to chunk by tokens. Tokens are the correct unit for
+  a model with a token limit."
   (:require [clojure.string :as str])
   (:import [java.util.regex Pattern]))
 
 (def default-separators
-  "Coarsest-to-finest split boundaries (the empty string splits into characters)."
+  "Split boundaries from coarsest to finest. The empty string splits into characters."
   ["\n\n" "\n" " " ""])
 
 (def language-separators
-  "Language-aware split boundaries, coarsest first."
+  "Split boundaries for each language, with the coarsest first."
   {:markdown (into ["\n# " "\n## " "\n### " "\n#### " "\n##### " "\n###### "
                    "```\n"
                    "\n\n***\n\n" "\n\n---\n\n" "\n\n___\n\n"]
@@ -65,7 +66,7 @@
                      :known (set (keys language-separators))}))))
 
 (defn- split-on
-  "Split s on literal separator sep, optionally attaching it to an adjacent piece."
+  "Split s on literal separator sep. Attach it to an adjacent piece when requested."
   [^String s ^String sep keep-separator]
   (if (or (= sep "") (= keep-separator false))
     (if (= sep "")
@@ -98,8 +99,8 @@
         length))))
 
 (defn- trim-overlap
-  "Pop pieces off the front of the current buffer until it is within the overlap
-  budget (and small enough to admit the next piece)."
+  "Remove pieces from the front of the current buffer until it is within the overlap
+  budget and can contain the next piece."
   [cur next-piece sep chunk-size overlap length-fn cache]
   (loop [cur cur, cur-len (joined-length cur sep length-fn cache)]
     (if (and (seq cur)
@@ -111,8 +112,8 @@
       cur)))
 
 (defn- merge-splits
-  "Greedily pack pieces (each already <= chunk-size) into chunks of <= chunk-size,
-  joined by sep, carrying `overlap` worth of trailing pieces into the next chunk."
+  "Pack pieces, each already <= chunk-size, into chunks of <= chunk-size. Join pieces
+  with sep. Carry trailing pieces of `overlap` size into the next chunk."
   [pieces sep chunk-size overlap length-fn cache]
   (loop [pieces (seq pieces), cur [], out []]
     (if-let [d (first pieces)]
@@ -122,7 +123,7 @@
           (let [doc (join-trim cur sep)
                 out (cond-> out doc (conj doc))
                 cur (trim-overlap cur d sep chunk-size overlap length-fn cache)]
-            (recur pieces cur out))                      ; retry same d on trimmed buffer
+            (recur pieces cur out))                      ; Retry the same d with the trimmed buffer.
           (recur (next pieces) candidate out)))
       (if-let [doc (join-trim cur sep)]
         (conj out doc)
@@ -169,8 +170,8 @@
   - `:length-fn`  measures a string's size; default `count` (characters). Pass a token
                   counter to chunk by tokens.
 
-  A piece with no admissible finer separator (an \"atom\" longer than `:chunk-size`) is
-  emitted whole rather than dropped."
+  A piece with no admissible finer separator is emitted whole. This includes an \"atom\"
+  longer than `:chunk-size`."
   ([text] (split text nil))
   ([text opts]
    (let [opts (or opts {})
@@ -194,9 +195,8 @@
 (defn split-with-offsets
   "Split `text` into maps with `:text`, `:start`, and `:end` offsets.
 
-  Options match `split`. Offsets are character indices into the original text. With
-  `:keep-separator false`, a chunk that cannot be located as an exact substring has
-  nil offsets."
+  Options match `split`. Offsets are character indices in the original text. With
+  `:keep-separator false`, a chunk that is not an exact substring has nil offsets."
   ([text] (split-with-offsets text nil))
   ([text opts]
    (let [source (str text)]
