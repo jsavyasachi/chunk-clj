@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] - 2026-08-17
+
+### Fixed
+
+- The character fallback splits on grapheme-cluster boundaries, so
+  multi-code-unit characters (emoji, astral-plane code points) are no longer
+  split into lone surrogates.
+
 ## [0.3.0] - 2026-07-23
 
 ### Added
