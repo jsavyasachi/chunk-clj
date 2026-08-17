@@ -1,7 +1,8 @@
 (ns chunk.core-test
   (:require [clojure.test :refer [deftest is testing]]
             [clojure.string :as str]
-            [chunk.core :as c]))
+            [chunk.core :as c])
+  (:import [java.nio.charset StandardCharsets]))
 
 (deftest short-text-stays-whole
   (is (= ["hello world"] (c/split "hello world" {:chunk-size 100}))))
@@ -65,6 +66,15 @@
   (let [chunks (c/split "supercalifragilistic" {:chunk-size 5 :overlap 0
                                                 :separators ["\n\n" "\n" " "]})]
     (is (= ["supercalifragilistic"] chunks))))
+
+(deftest character-fallback-keeps-astral-code-points-intact
+  ;; `𝔘` occupies two UTF-16 code units. A chunk size of two used to place one
+  ;; surrogate next to each ASCII character, creating invalid strings.
+  (let [chunks (c/split "a𝔘b" {:chunk-size 2 :overlap 0})]
+    (is (= ["a" "𝔘" "b"] chunks))
+    (is (every? #(= % (String. (.getBytes % StandardCharsets/UTF_8)
+                               StandardCharsets/UTF_8))
+                chunks))))
 
 (deftest markdown-language-splits-on-heading-boundaries
   (let [text (str "Intro paragraph with enough text to stand alone.\n"

@@ -70,7 +70,7 @@
   [^String s ^String sep keep-separator]
   (if (or (= sep "") (= keep-separator false))
     (if (= sep "")
-      (mapv str s)
+      (vec (re-seq (Pattern/compile "\\X") s))
       (->> (str/split s (re-pattern (Pattern/quote sep)) -1)
            (filterv (complement #(= "" %)))))
     (let [separator-length (count sep)]
