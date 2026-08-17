@@ -10,20 +10,20 @@ Report bugs, submit fixes, and contribute focused features to `chunk-clj`.
 
 ## Development
 
-This is a Clojure library. You need a JDK and [Leiningen](https://leiningen.org/).
-A project that migrated to `deps.edn` uses the Clojure CLI instead: see the
-README.
+This is a Clojure library built with `deps.edn` and the
+[Clojure CLI](https://clojure.org/guides/install_clojure); Leiningen is not
+required. You need a JDK and the Clojure CLI. See the README for the full set
+of aliases.
 
 ```bash
-lein test     # run the test suite
-lein check    # AOT-compile; must be free of reflection warnings
+clojure -M:test    # run the test suite (compiled with *warn-on-reflection* on)
 ```
 
 Requirements for a mergeable change:
 
 - **Tests first.** Add or update tests for the behavior you change. For a bug
   fix, include a regression test. It must fail before your fix and pass after it.
-- **Green build.** `lein test` passes and `lein check` reports **zero**
+- **Green build.** The test suite passes and the build reports **zero**
   reflection warnings.
 - **Keep the scope small.** Keep each pull request to one logical change.
 
